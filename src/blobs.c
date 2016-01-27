@@ -1,5 +1,23 @@
+/*
+shapeblobs - 3D metaballs in a shaped window
+Copyright (C) 2016  John Tsiombikas <nuclear@member.fsf.org>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 #include <assert.h>
 #include <GL/gl.h>
@@ -8,6 +26,8 @@
 #include "metasurf.h"
 #include "timer.h"
 #include "img_refmap.h"
+
+#undef RANDOM_BLOB_PARAMS
 
 struct metaball {
 	float x, y, z;
@@ -19,7 +39,8 @@ struct metaball {
 
 static void vertex(struct metasurface *ms, float x, float y, float z);
 static float eval(struct metasurface *ms, float x, float y, float z);
-static float frand(void);
+
+#define frand() ((float)rand() / (float)RAND_MAX)
 
 static struct metasurface *msurf;
 
@@ -45,8 +66,6 @@ static unsigned long start_time;
 
 int init()
 {
-	int i, j;
-
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_NORMALIZE);
@@ -62,13 +81,17 @@ int init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_refmap.width, img_refmap.height, 0,
-			GL_RGB, GL_UNSIGNED_BYTE, img_refmap.pixel_data);
+			GL_RGB, GL_UNSIGNED_BYTE, img_refmap.pixels);
 	glEnable(GL_TEXTURE_2D);
 
 	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
 	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
 	glEnable(GL_TEXTURE_GEN_S);
 	glEnable(GL_TEXTURE_GEN_T);
+
+	glMatrixMode(GL_TEXTURE);
+	glScalef(1, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
 
 	if(!(msurf = msurf_create())) {
 		return -1;
@@ -79,19 +102,23 @@ int init()
 	msurf_eval_func(msurf, eval);
 	msurf_vertex_func(msurf, vertex);
 
-	/*
-	for(i=0; i<NUM_MBALLS; i++) {
-		mballs[i].energy = frand() * 2.0 + 0.5;
-		for(j=0; j<2; j++) {
-			mballs[i].path_scale[j] = frand() * 1.5 + 0.5;
-			mballs[i].path_offset[j] = (frand() * 2.0 - 1.0) * 1.1;
+#ifdef RANDOM_BLOB_PARAMS
+	{
+		int i, j;
+		srand(time(0));
+		for(i=0; i<NUM_MBALLS; i++) {
+			mballs[i].energy = frand() * 2.0 + 0.5;
+			for(j=0; j<2; j++) {
+				mballs[i].path_scale[j] = frand() * 1.5 + 0.5;
+				mballs[i].path_offset[j] = (frand() * 2.0 - 1.0) * 1.1;
+			}
+			mballs[i].path_scale[2] = 1;
+			mballs[i].path_offset[2] = 0;
+			mballs[i].phase_offset = frand() * M_PI * 2.0;
+			mballs[i].speed = frand() + 0.5;
 		}
-		mballs[i].path_scale[2] = 1;
-		mballs[i].path_offset[2] = 0;
-		mballs[i].phase_offset = frand() * M_PI * 2.0;
-		mballs[i].speed = frand() + 0.5;
 	}
-	*/
+#endif
 
 	start_time = get_time_msec();
 	return 0;
@@ -206,9 +233,4 @@ static float eval(struct metasurface *ms, float x, float y, float z)
 		sum += mballs[i].energy / dsq;
 	}
 	return sum;
-}
-
-static float frand(void)
-{
-	return (float)rand() / (float)RAND_MAX;
 }
