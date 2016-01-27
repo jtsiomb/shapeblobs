@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 #include <X11/Xlib.h>
 #include <GL/gl.h>
@@ -11,6 +12,7 @@
 static int init_gl(int xsz, int ysz);
 static void handle_event(XEvent *ev);
 static void set_no_decoration(Window win);
+static int parse_args(int argc, char **argv);
 
 static Display *dpy;
 static Window win;
@@ -19,11 +21,17 @@ static GLXContext ctx;
 static int mapped;
 static int done;
 
+static int win_x = -1, win_y, win_width = 600, win_height = 600;
 
-int main(void)
+
+int main(int argc, char **argv)
 {
 	int shape_ev_base, shape_err_base;
 	XEvent ev;
+
+	if(parse_args(argc, argv) == -1) {
+		return 1;
+	}
 
 	if(!(dpy = XOpenDisplay(0))) {
 		fprintf(stderr, "failed to connect to the X server\n");
@@ -35,10 +43,13 @@ int main(void)
 		return 1;
 	}
 
-	if(init_gl(600, 600) == -1) {
+	if(init_gl(win_width, win_height) == -1) {
 		return 1;
 	}
 	set_no_decoration(win);
+	if(win_x != -1) {
+		XMoveWindow(dpy, win, win_x, win_y);
+	}
 
 	if(init() == -1) {
 		goto end;
@@ -273,4 +284,38 @@ void window_shape(unsigned char *pixels, int xsz, int ysz)
 	}
 
 	dynarr_free(rects);
+}
+
+static int parse_args(int argc, char **argv)
+{
+	int i;
+	for(i=1; i<argc; i++) {
+		if(argv[i][0] == '-') {
+			if(strcmp(argv[i], "-geometry") == 0) {
+				int flags = XParseGeometry(argv[++i], &win_x, &win_y,
+						(unsigned int*)&win_width, (unsigned int*)&win_height);
+				if(!flags || win_width == 0 || win_height == 0) {
+					fprintf(stderr, "invalid -geometry string\n");
+					return -1;
+				}
+				if((flags & (XValue | YValue)) != (XValue | YValue)) {
+					win_x = -1;
+				}
+
+			} else if(strcmp(argv[i], "-help") == 0 || strcmp(argv[i], "-h") == 0) {
+				printf("Usage: %s [options]\n", argv[0]);
+				printf("options:\n");
+				printf(" -geometry [WxH][+X+Y]  set window size and/or position\n");
+				printf(" -help                  print usage and exit\n");
+				return 0;
+			} else {
+				fprintf(stderr, "invalid option: %s\n", argv[i]);
+				return -1;
+			}
+		} else {
+			fprintf(stderr, "unexpected argument: %s\n", argv[i]);
+			return -1;
+		}
+	}
+	return 0;
 }

@@ -24,7 +24,16 @@ static float frand(void);
 static struct metasurface *msurf;
 
 #define NUM_MBALLS	8
-static struct metaball mballs[NUM_MBALLS];
+static struct metaball mballs[NUM_MBALLS] = {
+	{0, 0, 0, 2.18038, {1.09157, 1.69766, 1}, {0.622818, 0.905624, 0}, 1.24125, 0.835223},
+	{0, 0, 0, 2.03646, {0.916662, 1.2161, 1}, {0.118734, 0.283516, 0}, 2.29201, 1.0134},
+	{0, 0, 0, 2.40446, {1.87429, 1.57595, 1}, {0.298566, -0.788474, 0}, 3.8137, 0.516301},
+	{0, 0, 0, 0.985774, {0.705847, 0.735019, 1}, {0.669189, -0.217922, 0}, 0.815497, 0.608809},
+	{0, 0, 0, 2.49785, {0.827385, 1.75867, 1}, {0.0284513, 0.247808, 0}, 1.86002, 1.13755},
+	{0, 0, 0, 1.54857, {1.24037, 0.938775, 1}, {1.04011, 0.596987, 0}, 3.30964, 1.26991},
+	{0, 0, 0, 1.30046, {1.83729, 1.02869, 1}, {-0.476708, 0.676994, 0}, 5.77441, 0.569755},
+	{0, 0, 0, 2.39865, {1.28899, 0.788321, 1}, {-0.910677, 0.359099, 0}, 5.5935, 0.848893}
+};
 
 static int win_width, win_height;
 static unsigned char *stencil;
@@ -39,7 +48,7 @@ int init()
 	int i, j;
 
 	glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	glEnable(GL_NORMALIZE);
 	/*glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);*/
@@ -70,6 +79,7 @@ int init()
 	msurf_eval_func(msurf, eval);
 	msurf_vertex_func(msurf, vertex);
 
+	/*
 	for(i=0; i<NUM_MBALLS; i++) {
 		mballs[i].energy = frand() * 2.0 + 0.5;
 		for(j=0; j<2; j++) {
@@ -81,6 +91,7 @@ int init()
 		mballs[i].phase_offset = frand() * M_PI * 2.0;
 		mballs[i].speed = frand() + 0.5;
 	}
+	*/
 
 	start_time = get_time_msec();
 	return 0;
@@ -117,6 +128,7 @@ void display()
 	glLoadIdentity();
 	glTranslatef(0, 0, -8);
 
+	glFrontFace(GL_CW);
 	glBegin(GL_TRIANGLES);
 	msurf_polygonize(msurf);
 	glEnd();
