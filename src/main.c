@@ -205,14 +205,12 @@ static void handle_event(XEvent *ev)
 					GrabModeAsync, GrabModeAsync, None, None, ev->xbutton.time);
 			prev_x = ev->xbutton.x_root;
 			prev_y = ev->xbutton.y_root;
-			printf("GRAB\n");
 		}
 		break;
 
 	case ButtonRelease:
 		if(ev->xbutton.button == Button1) {
 			XUngrabPointer(dpy, ev->xbutton.time);
-			printf("UNGRAB\n");
 		}
 		break;
 
