@@ -39,6 +39,7 @@ static int mapped;
 static int done;
 
 static int win_x = -1, win_y, win_width = 600, win_height = 600;
+static unsigned int evmask;
 
 
 int main(int argc, char **argv)
@@ -143,8 +144,8 @@ static int init_gl(int xsz, int ysz)
 		XFree(vis_info);
 		return -1;
 	}
-	XSelectInput(dpy, win, KeyPressMask | StructureNotifyMask | ButtonPressMask |
-			ButtonReleaseMask | Button1MotionMask);
+	evmask = KeyPressMask | StructureNotifyMask | ButtonPressMask | Button1MotionMask;
+	XSelectInput(dpy, win, evmask);
 	XMapWindow(dpy, win);
 
 	if(!(ctx = glXCreateContext(dpy, vis_info, 0, True))) {
@@ -170,6 +171,11 @@ static int get_key(XKeyEvent *xkey)
 		break;
 	}
 	return sym;
+}
+
+static Bool match_motion_events(Display *dpy, XEvent *ev, XPointer arg)
+{
+	return ev->type == MotionNotify;
 }
 
 static void handle_event(XEvent *ev)
@@ -205,23 +211,35 @@ static void handle_event(XEvent *ev)
 					GrabModeAsync, GrabModeAsync, None, None, ev->xbutton.time);
 			prev_x = ev->xbutton.x_root;
 			prev_y = ev->xbutton.y_root;
+
+			evmask &= ~StructureNotifyMask;
+			evmask |= ButtonReleaseMask;
+			XSelectInput(dpy, win, evmask);
 		}
 		break;
 
 	case ButtonRelease:
 		if(ev->xbutton.button == Button1) {
+			evmask &= ~ButtonReleaseMask;
+			evmask |= StructureNotifyMask;
+			XSelectInput(dpy, win, evmask);
 			XUngrabPointer(dpy, ev->xbutton.time);
 		}
 		break;
 
 	case MotionNotify:
 		{
-			int x = ev->xmotion.x_root;
-			int y = ev->xmotion.y_root;
-			int dx = x - prev_x;
-			int dy = y - prev_y;
-			prev_x = x;
-			prev_y = y;
+			int x, y, dx = 0, dy = 0;
+
+			/* process all the pending motion events in one go */
+			do {
+				x = ev->xmotion.x_root;
+				y = ev->xmotion.y_root;
+				dx += x - prev_x;
+				dy += y - prev_y;
+				prev_x = x;
+				prev_y = y;
+			} while(XCheckIfEvent(dpy, ev, match_motion_events, 0));
 
 			win_x += dx;
 			win_y += dy;
