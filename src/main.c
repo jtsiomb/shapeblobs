@@ -157,7 +157,6 @@ static int get_key(XKeyEvent *xkey)
 
 static void handle_event(XEvent *ev)
 {
-	static int win_x = -1, win_y;
 	static int prev_x, prev_y;
 
 	switch(ev->type) {
@@ -170,10 +169,8 @@ static void handle_event(XEvent *ev)
 		break;
 
 	case ConfigureNotify:
-		if(win_x == -1) {
-			win_x = ev->xmotion.x_root;
-			win_y = ev->xmotion.y_root;
-		}
+		win_x = ev->xconfigure.x;
+		win_y = ev->xconfigure.y;
 		reshape(ev->xconfigure.width, ev->xconfigure.height);
 		break;
 
@@ -203,12 +200,18 @@ static void handle_event(XEvent *ev)
 		break;
 
 	case MotionNotify:
-		win_x += ev->xmotion.x_root - prev_x;
-		win_y += ev->xmotion.y_root - prev_y;
-		printf("moved: %d %d\n", win_x, win_y);
-		XMoveWindow(dpy, win, win_x, win_y);
-		prev_x = ev->xmotion.x_root;
-		prev_y = ev->xmotion.y_root;
+		{
+			int x = ev->xmotion.x_root;
+			int y = ev->xmotion.y_root;
+			int dx = x - prev_x;
+			int dy = y - prev_y;
+			prev_x = x;
+			prev_y = y;
+
+			win_x += dx;
+			win_y += dy;
+			XMoveWindow(dpy, win, win_x, win_y);
+		}
 		break;
 	}
 }
