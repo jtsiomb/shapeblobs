@@ -1,6 +1,8 @@
 Desktop 3D blobs effect
 =======================
 
+#![screenshot](http://nuclear.mutantstargoat.com/sw/misc/shapeblobs_shot.png)
+
 About
 -----
 Just a silly graphics hack of ever-morphing blobs (metaballs) on your desktop.
