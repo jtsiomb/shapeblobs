@@ -10,7 +10,7 @@ ifneq ($(shell uname -s | sed 's/MINGW32.*/MINGW32/'), MINGW32)
 endif
 
 CFLAGS = -pedantic -Wall -g -O3 -ffast-math
-LDFLAGS = -lgdi32 -lwinmm -lopengl32 -lglu32 -lm
+LDFLAGS = -mwindows -lgdi32 -lwinmm -lopengl32 -lglu32 -lm
 
 $(bin): $(obj)
 	$(CC) -o $@ $(obj) $(LDFLAGS)
