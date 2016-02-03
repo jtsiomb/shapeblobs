@@ -334,8 +334,11 @@ static int parse_args(int argc, char **argv)
 				return -1;
 			}
 		} else {
-			fprintf(stderr, "unexpected argument: %s\n", argv[i]);
-			return -1;
+			if(tex_fname) {
+				fprintf(stderr, "unexpected argument: %s\n", argv[i]);
+				return -1;
+			}
+			tex_fname = argv[i];
 		}
 	}
 	return 0;

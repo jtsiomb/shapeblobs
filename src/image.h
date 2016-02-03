@@ -15,22 +15,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef BLOBS_H_
-#define BLOBS_H_
+#ifndef IMAGE_H_
+#define IMAGE_H_
 
-extern char *tex_fname;	/* optional texture filename */
+struct image {
+	int width, height;
+	unsigned char *pixels;
+};
 
-int init();
-void cleanup();
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void display();
-void reshape(int x, int y);
+struct image *load_image(const char *fname);
+void free_image(struct image *img);
 
-void keyboard(int key, int press);
+#ifdef __cplusplus
+}
+#endif
 
-/* implemented in main.c */
-void swap_buffers(void);
-void quit(void);
-void window_shape(unsigned char *pixels, int xsz, int ysz);
-
-#endif	/* BLOBS_H_ */
+#endif	/* IMAGE_H_ */

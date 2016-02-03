@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "blobs.h"
 #include "metasurf.h"
 #include "timer.h"
+#include "image.h"
 #include "img_refmap.h"
 
 #undef RANDOM_BLOB_PARAMS
@@ -64,8 +65,13 @@ static int use_shape = 1;
 
 static unsigned long start_time;
 
+char *tex_fname;
+
+
 int init()
 {
+	struct image *imgfile = 0;
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_NORMALIZE);
@@ -76,12 +82,25 @@ int init()
 	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 	glStencilFunc(GL_ALWAYS, 0, 0xffffffff);
 
+	if(tex_fname) {
+		if(!(imgfile = load_image(tex_fname))) {
+			fprintf(stderr, "failed to load image file: %s\n", tex_fname);
+		}
+	}
+
 	glGenTextures(1, &tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_refmap.width, img_refmap.height, 0,
-			GL_RGB, GL_UNSIGNED_BYTE, img_refmap.pixels);
+
+	if(imgfile) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgfile->width, imgfile->height, 0,
+				GL_RGBA, GL_UNSIGNED_BYTE, imgfile->pixels);
+		free_image(imgfile);
+	} else {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_refmap.width, img_refmap.height, 0,
+				GL_RGB, GL_UNSIGNED_BYTE, img_refmap.pixels);
+	}
 	glEnable(GL_TEXTURE_2D);
 
 	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);

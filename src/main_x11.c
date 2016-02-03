@@ -41,7 +41,6 @@ static int done;
 static int win_x = -1, win_y, win_width = 600, win_height = 600;
 static unsigned int evmask;
 
-
 int main(int argc, char **argv)
 {
 	int shape_ev_base, shape_err_base;
@@ -349,8 +348,11 @@ static int parse_args(int argc, char **argv)
 				return -1;
 			}
 		} else {
-			fprintf(stderr, "unexpected argument: %s\n", argv[i]);
-			return -1;
+			if(tex_fname) {
+				fprintf(stderr, "unexpected argument: %s\n", argv[i]);
+				return -1;
+			}
+			tex_fname = argv[i];
 		}
 	}
 	return 0;
