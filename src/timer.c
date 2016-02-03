@@ -62,7 +62,9 @@ void sleep_msec(unsigned long msec)
 
 #ifdef WIN32
 #include <windows.h>
+#ifdef _MSC_VER
 #pragma comment(lib, "winmm.lib")
+#endif
 
 unsigned long get_time_msec(void)
 {

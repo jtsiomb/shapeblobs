@@ -2,3 +2,5 @@
 *.d
 *.swp
 shapeblobs
+shapeblobs.exe
+*.ppm

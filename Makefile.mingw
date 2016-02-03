@@ -1,11 +1,16 @@
 PREFIX = /usr/local
 
-src = $(filter-out src/main_win32.c,$(wildcard src/*.c))
+src = $(filter-out src/main_x11.c,$(wildcard src/*.c))
 obj = $(src:.c=.o)
-bin = shapeblobs
+bin = shapeblobs.exe
+
+ifneq ($(shell uname -s | sed 's/MINGW32.*/MINGW32/'), MINGW32)
+	# not building on windows, try to use a cross-compiler
+	CC = i686-w64-mingw32-gcc
+endif
 
 CFLAGS = -pedantic -Wall -g -O3 -ffast-math
-LDFLAGS = -lGL -lGLU -lX11 -lXext -lm
+LDFLAGS = -lgdi32 -lwinmm -lopengl32 -lglu32 -lm
 
 $(bin): $(obj)
 	$(CC) -o $@ $(obj) $(LDFLAGS)

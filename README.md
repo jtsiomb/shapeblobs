@@ -16,12 +16,19 @@ server with support for the Xshape extension.
 
 You *don't* need a compositing manager, or anything fancy like that to run this.
 
+Shapeblobs also runs on ms windows now.
+
 Installation
 ------------
-Just type make to compile shapeblobs, and make install as root to install
-system-wide (/usr/local by default). Feel free to just copy the binary anywhere
+Just type ``make`` to compile shapeblobs, and ``make install`` (as root) to install
+system-wide (``/usr/local`` by default). Feel free to just copy the binary anywhere
 and run it from there if you don't wish to install it, or change the PREFIX
 variable in the makefile to install to a different location.
+
+You need MinGW on windows, or the MinGW cross-compiler on UNIX to build the
+windows binary. Just type ``make -f Makefile.mingw`` and it should do the right
+thing. If your MinGW cross-compiler binary is not named ``i686-w64-mingw32-gcc``,
+then also add ``CC=your-mingw-gcc-binary`` to the command line.
 
 License
 -------
