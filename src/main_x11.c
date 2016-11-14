@@ -27,13 +27,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "dynarr.h"
 
 static int init_gl(int xsz, int ysz);
-static void handle_event(XEvent *ev);
+static void set_window_title(Window win, const char *title);
+static int handle_event(XEvent *ev);
 static void set_no_decoration(Window win);
 static int parse_args(int argc, char **argv);
 
 static Display *dpy;
 static Window win;
 static GLXContext ctx;
+static Atom xa_wm_prot, xa_wm_del_win;
 
 static int mapped;
 static int done;
@@ -54,6 +56,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "failed to connect to the X server\n");
 		return 1;
 	}
+	xa_wm_prot = XInternAtom(dpy, "WM_PROTOCOLS", False);
+	xa_wm_del_win = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
 
 	if(!XShapeQueryExtension(dpy, &shape_ev_base, &shape_err_base)) {
 		fprintf(stderr, "X server doesn't support the shape extension\n");
@@ -75,8 +79,9 @@ int main(int argc, char **argv)
 	for(;;) {
 		if(!mapped) {
 			XNextEvent(dpy, &ev);
-			handle_event(&ev);
-			if(done) goto end;
+			if(handle_event(&ev) == -1 || done) {
+				goto end;
+			}
 		} else {
 			while(XPending(dpy)) {
 				XNextEvent(dpy, &ev);
@@ -119,6 +124,7 @@ static int init_gl(int xsz, int ysz)
 		None
 	};
 	XVisualInfo *vis_info;
+	XClassHint chint;
 	GLXContext ctx;
 	int scr;
 	Window rwin;
@@ -145,6 +151,14 @@ static int init_gl(int xsz, int ysz)
 	}
 	evmask = KeyPressMask | StructureNotifyMask | ButtonPressMask | Button1MotionMask;
 	XSelectInput(dpy, win, evmask);
+
+	XSetWMProtocols(dpy, win, &xa_wm_del_win, 1);
+
+	chint.res_name = chint.res_class = "shapeblobs";
+	XSetClassHint(dpy, win, &chint);
+
+	set_window_title(win, "shapeblobs");
+
 	XMapWindow(dpy, win);
 
 	if(!(ctx = glXCreateContext(dpy, vis_info, 0, True))) {
@@ -157,6 +171,15 @@ static int init_gl(int xsz, int ysz)
 	glXMakeCurrent(dpy, win, ctx);
 	reshape(xsz, ysz);
 	return 0;
+}
+
+static void set_window_title(Window win, const char *title)
+{
+	XTextProperty wm_name;
+	XStringListToTextProperty((char**)&title, 1, &wm_name);
+	XSetWMName(dpy, win, &wm_name);
+	XSetWMIconName(dpy, win, &wm_name);
+	XFree(wm_name.value);
 }
 
 static int get_key(XKeyEvent *xkey)
@@ -177,7 +200,7 @@ static Bool match_motion_events(Display *dpy, XEvent *ev, XPointer arg)
 	return ev->type == MotionNotify;
 }
 
-static void handle_event(XEvent *ev)
+static int handle_event(XEvent *ev)
 {
 	static int prev_x, prev_y;
 
@@ -245,7 +268,17 @@ static void handle_event(XEvent *ev)
 			XMoveWindow(dpy, win, win_x, win_y);
 		}
 		break;
+
+	case ClientMessage:
+		if(ev->xclient.message_type == xa_wm_prot) {
+			if(ev->xclient.data.l[0] == xa_wm_del_win) {
+				return -1;
+			}
+		}
+		break;
 	}
+
+	return 0;
 }
 
 struct mwm_hints{
