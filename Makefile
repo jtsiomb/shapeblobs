@@ -1,14 +1,17 @@
 PREFIX = /usr/local
 
-src = $(filter-out src/main_win32.c,$(wildcard src/*.c))
+src = src/main_x11.c src/blobs.c src/msurf2.c src/image.c src/timer.c src/dynarr.c
 obj = $(src:.c=.o)
 bin = shapeblobs
 
-CFLAGS = -pedantic -Wall -g -O3 -ffast-math
-LDFLAGS = -lGL -lGLU -lX11 -lXext -lm
+CFLAGS = -O3
+LIBS = -lGL -lGLU -lX11 -lXext -lm
 
 $(bin): $(obj)
-	$(CC) -o $@ $(obj) $(LDFLAGS)
+	$(CC) -o $@ $(obj) $(LDFLAGS) $(LIBS)
+
+.c.o:
+	$(CC) -o $@ -c $< $(CFLAGS)
 
 .PHONY: clean
 clean:

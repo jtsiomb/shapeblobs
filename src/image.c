@@ -19,8 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <stdint.h>
 #include "image.h"
+
+#ifdef __sgi
+#include <sys/types.h>
+#else
+#include <stdint.h>
+#endif
 
 #if  defined(__i386__) || defined(__ia64__) || defined(WIN32) || \
     (defined(__alpha__) || defined(__alpha)) || \

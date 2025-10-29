@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <X11/Xlib.h>
+#include <X11/keysym.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <X11/extensions/shape.h>
@@ -116,9 +116,9 @@ static int init_gl(int xsz, int ysz)
 		GLX_USE_GL, 1,
 		GLX_RGBA,
 		GLX_DOUBLEBUFFER,
-		GLX_RED_SIZE, 8,
-		GLX_GREEN_SIZE, 8,
-		GLX_BLUE_SIZE, 8,
+		GLX_RED_SIZE, 1,
+		GLX_GREEN_SIZE, 1,
+		GLX_BLUE_SIZE, 1,
 		GLX_DEPTH_SIZE, 16,
 		GLX_STENCIL_SIZE, 1,
 		None
@@ -282,11 +282,11 @@ static int handle_event(XEvent *ev)
 }
 
 struct mwm_hints{
-    uint32_t flags;
-    uint32_t functions;
-    uint32_t decorations;
-    int32_t input_mode;
-    uint32_t status;
+    unsigned long flags;
+    unsigned long functions;
+    unsigned long decorations;
+    long input_mode;
+    unsigned long status;
 };
 
 #define MWM_HINTS_DEC	(1 << 1)
@@ -379,12 +379,16 @@ static int parse_args(int argc, char **argv)
 			} else if(strcmp(argv[i], "-notex") == 0) {
 				use_envmap = 0;
 
+			} else if(strcmp(argv[i], "-noshape") == 0) {
+				use_shape = 0;
+
 			} else if(strcmp(argv[i], "-help") == 0 || strcmp(argv[i], "-h") == 0) {
 				printf("Usage: %s [options]\n", argv[0]);
 				printf("options:\n");
 				printf(" -geometry [WxH][+X+Y]  set window size and/or position\n");
 				printf(" -blobs <n>             set number of blobs (1 to %d)\n", MAX_MBALLS);
 				printf(" -notex                 disable environment map\n");
+				printf(" -noshape				start with regular unshaped window\n");
 				printf(" -help                  print usage and exit\n");
 
 				printf("\nhotkeys:\n");

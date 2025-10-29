@@ -54,9 +54,7 @@ static struct metaball mballs[MAX_MBALLS] = {
 
 static int win_width, win_height;
 static unsigned char *stencil;
-static unsigned int tex;
 
-static int use_shape = 1;
 
 static unsigned long start_time;
 
@@ -65,8 +63,8 @@ static float ltcol[][4] = {{0.9, 0.6, 0.5, 1}, {0.3, 0.2, 0.6, 1}};
 
 static float mtl_kd[] = {1, 1, 1, 1};
 static float mtl_ks[] = {0.6, 0.6, 0.6, 1};
-static float mtl_black[] = {0, 0, 0, 1};
 
+int use_shape = 1;
 int use_envmap = 1;
 int num_mballs = MAX_MBALLS;
 char *tex_fname;
@@ -81,7 +79,6 @@ int init()
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_NORMALIZE);
 
 	for(i=0; i<2; i++) {
 		glEnable(GL_LIGHT0 + i);
@@ -109,8 +106,6 @@ int init()
 			}
 		}
 
-		glGenTextures(1, &tex);
-		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -223,6 +218,7 @@ void display()
 
 static void draw_mesh(struct msurf_vertex *varr, unsigned int vcount)
 {
+#ifdef GL_VERSION_1_1
 	glVertexPointer(3, GL_FLOAT, sizeof *varr, &varr->x);
 	glNormalPointer(GL_FLOAT, sizeof *varr, &varr->nx);
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -232,6 +228,20 @@ static void draw_mesh(struct msurf_vertex *varr, unsigned int vcount)
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
+#else
+	glBegin(GL_TRIANGLES);
+	while(vcount >= 3) {
+		glNormal3fv(&varr[0].nx);
+		glVertex3fv(&varr[0].x);
+		glNormal3fv(&varr[1].nx);
+		glVertex3fv(&varr[1].x);
+		glNormal3fv(&varr[2].nx);
+		glVertex3fv(&varr[2].x);
+		vcount -= 3;
+		varr += 3;
+	}
+	glEnd();
+#endif
 }
 
 void reshape(int x, int y)

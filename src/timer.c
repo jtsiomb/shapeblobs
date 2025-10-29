@@ -1,6 +1,6 @@
 /*
 shapeblobs - 3D metaballs in a shaped window
-Copyright (C) 2016  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2016-2026  John Tsiombikas <nuclear@mutantstargoat.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define __unix__
 #endif
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__unix)
 #include <time.h>
 #include <unistd.h>
 #include <sys/time.h>

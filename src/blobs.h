@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MAX_MBALLS	8
 
 extern char *tex_fname;	/* optional texture filename */
-extern int use_envmap;
+extern int use_shape, use_envmap;
 extern int num_mballs;
 
 int init();
