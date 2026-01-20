@@ -1,6 +1,6 @@
 /*
 shapeblobs - 3D metaballs in a shaped window
-Copyright (C) 2016  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2016-2026  John Tsiombikas <nuclear@mutantstargoat.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -370,10 +370,21 @@ static int parse_args(int argc, char **argv)
 					win_x = -1;
 				}
 
+			} else if(strcmp(argv[i], "-blobs") == 0) {
+				if(!argv[++i] || (num_mballs = atoi(argv[i])) < 1 || num_mballs > MAX_MBALLS) {
+					fprintf(stderr, "invalid -blobs option, expected number between 1 and %d\n", MAX_MBALLS);
+					return -1;
+				}
+
+			} else if(strcmp(argv[i], "-notex") == 0) {
+				use_envmap = 0;
+
 			} else if(strcmp(argv[i], "-help") == 0 || strcmp(argv[i], "-h") == 0) {
 				printf("Usage: %s [options]\n", argv[0]);
 				printf("options:\n");
 				printf(" -geometry [WxH][+X+Y]  set window size and/or position\n");
+				printf(" -blobs <n>             set number of blobs (1 to %d)\n", MAX_MBALLS);
+				printf(" -notex                 disable environment map\n");
 				printf(" -help                  print usage and exit\n");
 				exit(0);
 			} else {

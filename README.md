@@ -20,19 +20,20 @@ Shapeblobs also runs on ms windows now.
 
 Installation
 ------------
-Just type ``make`` to compile shapeblobs, and ``make install`` (as root) to install
-system-wide (``/usr/local`` by default). Feel free to just copy the binary anywhere
+Just type `make` to compile shapeblobs, and `make install` (as root) to install
+system-wide (`/usr/local` by default). Feel free to just copy the binary anywhere
 and run it from there if you don't wish to install it, or change the PREFIX
 variable in the makefile to install to a different location.
 
 You need MinGW on windows, or the MinGW cross-compiler on UNIX to build the
-windows binary. Just type ``make -f Makefile.mingw`` and it should do the right
-thing. If your MinGW cross-compiler binary is not named ``i686-w64-mingw32-gcc``,
-then also add ``CC=your-mingw-gcc-binary`` to the command line.
+windows binary. Just type `make -f Makefile.mingw` and it should do the right
+thing. If your MinGW cross-compiler binary is not named `i686-w64-mingw32-gcc`,
+then also add `CC=your-mingw-gcc-binary` to the command line.
 
 License
 -------
-Author: John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2016-2026  John Tsiombikas <nuclear@mutantstargoat.com>
+
 Shapeblobs is free software. Feel free to use, modify, and/or redistribute it
 under the terms of the GNU General Public License v3, or any later version
 published by the Free Software Foundation. See COPYING for details.

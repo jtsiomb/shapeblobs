@@ -1,6 +1,6 @@
 /*
 shapeblobs - 3D metaballs in a shaped window
-Copyright (C) 2016  John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2016-2026  John Tsiombikas <nuclear@mutantstargoat.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,7 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef BLOBS_H_
 #define BLOBS_H_
 
+#define MAX_MBALLS	8
+
 extern char *tex_fname;	/* optional texture filename */
+extern int use_envmap;
+extern int num_mballs;
 
 int init();
 void cleanup();
