@@ -386,6 +386,12 @@ static int parse_args(int argc, char **argv)
 				printf(" -blobs <n>             set number of blobs (1 to %d)\n", MAX_MBALLS);
 				printf(" -notex                 disable environment map\n");
 				printf(" -help                  print usage and exit\n");
+
+				printf("\nhotkeys:\n");
+				printf(" S: toggle shaped window\n");
+				printf(" T: toggle environment map\n");
+				printf(" -/+: change number of blobs\n");
+				printf(" Q: quit\n");
 				exit(0);
 			} else {
 				fprintf(stderr, "invalid option: %s\n", argv[i]);
