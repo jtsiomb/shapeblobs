@@ -8,13 +8,8 @@ About
 Just a silly graphics hack of ever-morphing blobs (metaballs) on your desktop.
 The window shape is updated continuously to match the shape of the blobs.
 
-It's not a very lightweight effect, and needing to read-back the rendered image
-from the GPU and set the window shape in real-time doesn't help, so it needs a
-pretty fast computer to run properly. Plus it's not optimized at all, being just
-a silly hack and all. Other than that, it requires OpenGL (obviously), and an X
-server with support for the Xshape extension.
-
-You *don't* need a compositing manager, or anything fancy like that to run this.
+It requires OpenGL and an X server with support for the Xshape extension. You
+*don't* need a compositing manager, or anything fancy like that to run this.
 
 Shapeblobs also runs on ms windows now.
 
