@@ -375,7 +375,7 @@ static int parse_args(int argc, char **argv)
 				printf("options:\n");
 				printf(" -geometry [WxH][+X+Y]  set window size and/or position\n");
 				printf(" -help                  print usage and exit\n");
-				return 0;
+				exit(0);
 			} else {
 				fprintf(stderr, "invalid option: %s\n", argv[i]);
 				return -1;

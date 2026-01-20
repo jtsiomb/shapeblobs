@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "blobs.h"
-#include "metasurf.h"
+#include "msurf2.h"
 #include "timer.h"
 #include "image.h"
 #include "img_refmap.h"
@@ -31,30 +31,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #undef RANDOM_BLOB_PARAMS
 
 struct metaball {
-	float x, y, z;
 	float energy;
 	float path_scale[3];
 	float path_offset[3];
 	float phase_offset, speed;
 };
 
-static void vertex(struct metasurface *ms, float x, float y, float z);
-static float eval(struct metasurface *ms, float x, float y, float z);
-
 #define frand() ((float)rand() / (float)RAND_MAX)
 
-static struct metasurface *msurf;
+static struct msurf_volume vol;
 
 #define NUM_MBALLS	8
 static struct metaball mballs[NUM_MBALLS] = {
-	{0, 0, 0, 2.18038, {1.09157, 1.69766, 1}, {0.622818, 0.905624, 0}, 1.24125, 0.835223},
-	{0, 0, 0, 2.03646, {0.916662, 1.2161, 1}, {0.118734, 0.283516, 0}, 2.29201, 1.0134},
-	{0, 0, 0, 2.40446, {1.87429, 1.57595, 1}, {0.298566, -0.788474, 0}, 3.8137, 0.516301},
-	{0, 0, 0, 0.985774, {0.705847, 0.735019, 1}, {0.669189, -0.217922, 0}, 0.815497, 0.608809},
-	{0, 0, 0, 2.49785, {0.827385, 1.75867, 1}, {0.0284513, 0.247808, 0}, 1.86002, 1.13755},
-	{0, 0, 0, 1.54857, {1.24037, 0.938775, 1}, {1.04011, 0.596987, 0}, 3.30964, 1.26991},
-	{0, 0, 0, 1.30046, {1.83729, 1.02869, 1}, {-0.476708, 0.676994, 0}, 5.77441, 0.569755},
-	{0, 0, 0, 2.39865, {1.28899, 0.788321, 1}, {-0.910677, 0.359099, 0}, 5.5935, 0.848893}
+	{2.18038, {1.09157, 1.69766, 1}, {0.622818, 0.905624, 0}, 1.24125, 0.835223},
+	{2.03646, {0.916662, 1.2161, 1}, {0.118734, 0.283516, 0}, 2.29201, 1.0134},
+	{2.40446, {1.87429, 1.57595, 1}, {0.298566, -0.788474, 0}, 3.8137, 0.516301},
+	{0.985774, {0.705847, 0.735019, 1}, {0.669189, -0.217922, 0}, 0.815497, 0.608809},
+	{2.49785, {0.827385, 1.75867, 1}, {0.0284513, 0.247808, 0}, 1.86002, 1.13755},
+	{1.54857, {1.24037, 0.938775, 1}, {1.04011, 0.596987, 0}, 3.30964, 1.26991},
+	{1.30046, {1.83729, 1.02869, 1}, {-0.476708, 0.676994, 0}, 5.77441, 0.569755},
+	{2.39865, {1.28899, 0.788321, 1}, {-0.910677, 0.359099, 0}, 5.5935, 0.848893}
 };
 
 static int win_width, win_height;
@@ -67,9 +63,12 @@ static unsigned long start_time;
 
 char *tex_fname;
 
+static void draw_mesh(struct msurf_vertex *varr, unsigned int vcount);
+
 
 int init()
 {
+	int i;
 	struct image *imgfile = 0;
 
 	glEnable(GL_DEPTH_TEST);
@@ -112,18 +111,20 @@ int init()
 	glScalef(1, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 
-	if(!(msurf = msurf_create())) {
+	if(msurf_init(&vol) == -1) {
 		return -1;
 	}
-	msurf_set_threshold(msurf, 8);
-	msurf_set_inside(msurf, MSURF_GREATER);
-	msurf_set_bounds(msurf, -3.5, 3.5, -3.5, 3.5, -3.5, 3.5);
-	msurf_eval_func(msurf, eval);
-	msurf_vertex_func(msurf, vertex);
+	if(msurf_metaballs(&vol, NUM_MBALLS) == -1) {
+		msurf_destroy(&vol);
+		return -1;
+	}
+	vol.isoval = 8;
+	msurf_resolution(&vol, 40, 40, 40);
+	msurf_size(&vol, 7, 7, 7);
 
 #ifdef RANDOM_BLOB_PARAMS
 	{
-		int i, j;
+		int j;
 		srand(time(0));
 		for(i=0; i<NUM_MBALLS; i++) {
 			mballs[i].energy = frand() * 2.0 + 0.5;
@@ -139,13 +140,17 @@ int init()
 	}
 #endif
 
+	for(i=0; i<NUM_MBALLS; i++) {
+		vol.mballs[i].energy = mballs[i].energy;
+	}
+
 	start_time = get_time_msec();
 	return 0;
 }
 
 void cleanup()
 {
-	msurf_free(msurf);
+	msurf_destroy(&vol);
 }
 
 static void update(double sec)
@@ -154,10 +159,16 @@ static void update(double sec)
 
 	for(i=0; i<NUM_MBALLS; i++) {
 		float t = sec * mballs[i].speed + mballs[i].phase_offset;
-		mballs[i].x = cos(t) * mballs[i].path_scale[0] + mballs[i].path_offset[0];
-		mballs[i].y = sin(t) * mballs[i].path_scale[1] + mballs[i].path_offset[1];
-		mballs[i].z = -cos(t) * mballs[i].path_scale[2] + mballs[i].path_offset[2];
+		vol.mballs[i].pos.x = cos(t) * mballs[i].path_scale[0] +
+			mballs[i].path_offset[0] + 3.5f;
+		vol.mballs[i].pos.y = sin(t) * mballs[i].path_scale[1] +
+			mballs[i].path_offset[1] + 3.5f;
+		vol.mballs[i].pos.z = -cos(t) * mballs[i].path_scale[2] +
+			mballs[i].path_offset[2] + 3.5f;
 	}
+
+	msurf_begin(&vol);
+	msurf_genmesh(&vol);
 }
 
 void display()
@@ -172,12 +183,9 @@ void display()
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glTranslatef(0, 0, -8);
+	glTranslatef(-3.5, -3.5, -8 - 3.5);
 
-	glFrontFace(GL_CW);
-	glBegin(GL_TRIANGLES);
-	msurf_polygonize(msurf);
-	glEnd();
+	draw_mesh(vol.varr, vol.num_verts);
 
 	swap_buffers();
 	assert(glGetError() == GL_NO_ERROR);
@@ -186,6 +194,19 @@ void display()
 		glReadPixels(0, 0, win_width, win_height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencil);
 		window_shape(stencil, win_width, win_height);
 	}
+}
+
+static void draw_mesh(struct msurf_vertex *varr, unsigned int vcount)
+{
+	glVertexPointer(3, GL_FLOAT, sizeof *varr, &varr->x);
+	glNormalPointer(GL_FLOAT, sizeof *varr, &varr->nx);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+
+	glDrawArrays(GL_TRIANGLES, 0, vcount);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 }
 
 void reshape(int x, int y)
@@ -222,34 +243,4 @@ void keyboard(int key, int pressed)
 			break;
 		}
 	}
-}
-
-static void vertex(struct metasurface *ms, float x, float y, float z)
-{
-	static const float delta = 0.01;
-
-	float val = eval(ms, x, y, z);
-	float dfdx = eval(ms, x + delta, y, z) - val;
-	float dfdy = eval(ms, x, y + delta, z) - val;
-	float dfdz = eval(ms, x, y, z + delta) - val;
-
-	glNormal3f(dfdx, dfdy, dfdz);
-	glVertex3f(x, y, z);
-}
-
-static float eval(struct metasurface *ms, float x, float y, float z)
-{
-	int i;
-
-	float sum = 0.0f;
-
-	for(i=0; i<NUM_MBALLS; i++) {
-		float dx = x - mballs[i].x;
-		float dy = y - mballs[i].y;
-		float dz = z - mballs[i].z;
-		float dsq = dx * dx + dy * dy + dz * dz;
-
-		sum += mballs[i].energy / dsq;
-	}
-	return sum;
 }
