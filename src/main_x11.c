@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <X11/extensions/shape.h>
+#include <Xm/MwmUtil.h>
 #include "blobs.h"
 #include "dynarr.h"
 
@@ -42,10 +43,11 @@ static int done;
 
 static int win_x = -1, win_y, win_width = 600, win_height = 600;
 static unsigned int evmask;
+static int shape_ev_base, shape_err_base;
+static int shape_pending;
 
 int main(int argc, char **argv)
 {
-	int shape_ev_base, shape_err_base;
 	XEvent ev;
 
 	if(parse_args(argc, argv) == -1) {
@@ -77,7 +79,7 @@ int main(int argc, char **argv)
 	}
 
 	for(;;) {
-		if(!mapped) {
+		if(!mapped || shape_pending) {
 			XNextEvent(dpy, &ev);
 			if(handle_event(&ev) == -1 || done) {
 				goto end;
@@ -88,6 +90,7 @@ int main(int argc, char **argv)
 				handle_event(&ev);
 				if(done) goto end;
 			}
+
 			display();
 		}
 	}
@@ -151,6 +154,7 @@ static int init_gl(int xsz, int ysz)
 	}
 	evmask = KeyPressMask | StructureNotifyMask | ButtonPressMask | Button1MotionMask;
 	XSelectInput(dpy, win, evmask);
+	XShapeSelectInput(dpy, win, ShapeNotifyMask);
 
 	XSetWMProtocols(dpy, win, &xa_wm_del_win, 1);
 
@@ -276,12 +280,18 @@ static int handle_event(XEvent *ev)
 			}
 		}
 		break;
+
+	default:
+		if(ev->type == shape_ev_base + ShapeNotify) {
+			shape_pending = 0;
+		}
 	}
 
 	return 0;
 }
 
-struct mwm_hints{
+/*
+struct mwm_hints {
     unsigned long flags;
     unsigned long functions;
     unsigned long decorations;
@@ -289,18 +299,20 @@ struct mwm_hints{
     unsigned long status;
 };
 
-#define MWM_HINTS_DEC	(1 << 1)
-#define MWM_DECOR_NONE	0
+#define MWM_HINTS_FUNCTIONS		1
+#define MWM_HINTS_DECORATIONS	2
+#define MWM_HINTS_INPUT_MODE	4
+*/
 
 static void set_no_decoration(Window win)
 {
 	Atom wm_hints;
+	PropMotifWmHints hints = {0};
 
-	if((wm_hints = XInternAtom(dpy, "_MOTIF_WM_HINTS", True)) != None) {
-		struct mwm_hints hints = {MWM_HINTS_DEC, 0, MWM_DECOR_NONE, 0, 0};
-		XChangeProperty(dpy, win, wm_hints, wm_hints, 32, PropModeReplace,
-				(unsigned char*)&hints, 4);
-	}
+	wm_hints = XInternAtom(dpy, _XA_MOTIF_WM_HINTS, False);
+	hints.flags = MWM_HINTS_DECORATIONS;
+	XChangeProperty(dpy, win, wm_hints, wm_hints, 32, PropModeReplace,
+			(unsigned char*)&hints, 5);
 }
 
 void window_shape(unsigned char *pixels, int xsz, int ysz)
@@ -349,6 +361,7 @@ void window_shape(unsigned char *pixels, int xsz, int ysz)
 	num = dynarr_size(rects);
 	if(num) {
 		XShapeCombineRectangles(dpy, win, ShapeBounding, 0, 0, rects, num, ShapeSet, YXBanded);
+		shape_pending = 1;
 	}
 
 	dynarr_free(rects);
