@@ -211,6 +211,7 @@ void display()
 	assert(glGetError() == GL_NO_ERROR);
 
 	if(use_shape) {
+		printf("reading %dx%d\n", win_width, win_height);
 		glReadPixels(0, 0, win_width, win_height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencil);
 		window_shape(stencil, win_width, win_height);
 	}
@@ -252,10 +253,14 @@ void reshape(int x, int y)
 	gluPerspective(45.0, (float)x / (float)y, 0.5, 100.0);
 
 	if(x != win_width || y != win_height) {
-		free(stencil);
-		stencil = malloc(x * y);
 		win_width = x;
 		win_height = y;
+
+		x = (x + 3) & ~3;
+		y = (y + 3) & ~3;
+
+		free(stencil);
+		stencil = malloc(x * y);
 	}
 }
 

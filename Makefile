@@ -4,7 +4,7 @@ src = src/main_x11.c src/blobs.c src/msurf2.c src/image.c src/timer.c src/dynarr
 obj = $(src:.c=.o)
 bin = shapeblobs
 
-CFLAGS = -O3
+CFLAGS = -g
 LIBS = -lGL -lGLU -lX11 -lXext -lm
 
 $(bin): $(obj)

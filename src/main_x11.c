@@ -355,7 +355,7 @@ void window_shape(unsigned char *pixels, int xsz, int ysz)
 				}
 			}
 		}
-		pptr -= xsz;
+		pptr -= (xsz + 3) & ~3;
 	}
 
 	num = dynarr_size(rects);
